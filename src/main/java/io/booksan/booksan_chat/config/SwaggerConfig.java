@@ -19,8 +19,8 @@ public class SwaggerConfig {
 
     private Info apiInfo() {
         return new Info()
-	                .title("Board API")
-	                .description("거래 게시판에 관한 REST API")
+	                .title("Chat API")
+	                .description("채팅기능에 관한 REST API")
 	                .version("1.0.0");
     }
 }
