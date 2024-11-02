@@ -6,35 +6,38 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import io.booksan.booksan_chat.dto.ChatRoomDTO;
-import io.booksan.booksan_chat.service.ChatService;
+import io.booksan.booksan_chat.entity.ChatRoom;
+import io.booksan.booksan_chat.service.ChatRoomService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequestMapping("/api/chat") 
 @RequiredArgsConstructor
+@Slf4j
 public class ChatRoomController {
-    private final ChatService chatService;
+    private final ChatRoomService chatService;
 
     @GetMapping("/rooms")
 	@ResponseBody
-	public List<ChatRoomDTO> rooms() {
-		return chatService.findAllRoom("aaaa");
+	public List<ChatRoom> rooms() {
+		return chatService.findAllRoom();
 	}
 
-    @PostMapping("/room")
+    @PostMapping("/room/insert/{name}")
 	@ResponseBody
-	public ChatRoomDTO createRoom(@RequestParam String name) {
+	public ChatRoom createRoom(@PathVariable("name") String name) {
+		log.info("이름은 :"+name);
 		return chatService.createChatRoom(name);
 	}
 
     @GetMapping("/room/{roomId}")
 	@ResponseBody
-	public ChatRoomDTO roomInfo(@PathVariable String roomId) {
+	public ChatRoom roomInfo(@PathVariable("roomId") String roomId) {
 		return chatService.findRoomById(roomId);
 	}
+
 }

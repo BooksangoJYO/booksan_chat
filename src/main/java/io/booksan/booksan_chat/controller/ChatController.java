@@ -2,17 +2,17 @@ package io.booksan.booksan_chat.controller;
 
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.stereotype.Controller;
 
 import io.booksan.booksan_chat.dto.ChatMessageDTO;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-@RequestMapping("/api/chat")
+@Controller
 public class ChatController {
     private final SimpMessageSendingOperations messagingTemplate;
 
-    @MessageMapping("/message")
+    @MessageMapping("/chat/message")
     public void message(ChatMessageDTO message) {
 
         System.out.println("서버에서 메시지 수신 message " + message.toString());

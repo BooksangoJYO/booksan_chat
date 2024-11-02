@@ -18,7 +18,7 @@
     </insert>
 
     <!-- 채팅방 찾기 -->
-    <select id="findRoomSessionId" resultType="io.booksan.booksan_chat.ChatRoomVO">
+    <select id="findRoomSessionId" resultType="io.booksan.booksan_chat.vo.ChatRoomVO">
         SELECT ROOM_ID, NAME, INSERT_DAYTIME, TYPE
         FROM CHAT_ROOM
         WHERE ROOM_ID = #{sessionId}
@@ -36,7 +36,7 @@
     <insert id="insertUserChatRoom">
         INSERT INTO USER_CHAT_ROOM (ROOM_ID, UID, INSERT_DAYTIME)
         VALUES (#{roomId}, #{uid}, NOW())
-        <selectKey resultType="io.booksan.booksan_chat.ChatRoomVO" keyProperty="roomId" order="AFTER">
+        <selectKey resultType="io.booksan.booksan_chat.vo.ChatRoomVO" keyProperty="roomId" order="AFTER">
             SELECT ROOM_ID, NAME, INSERT_DAYTIME, TYPE
             FROM CHAT_ROOM
             WHERE ROOM_ID = #{roomId}
