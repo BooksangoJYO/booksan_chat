@@ -9,7 +9,9 @@ import io.booksan.booksan_chat.vo.ChatRoomVO;
 import io.booksan.booksan_chat.vo.UserChatRoomVO;
 
 @Mapper
-public interface  ChatDAO {
+public interface ChatDAO {
+
+    String getNicknameByEmail(String email);
 
     //참여중인 채팅방 목록
     List<ChatRoomVO> findAllRoomById(String uid);
@@ -22,14 +24,16 @@ public interface  ChatDAO {
 
     //채팅방 제거
     int deleteChatRoom(String sessionId);
-    
+
     //사용자가 채팅방에 입장한다
     ChatRoomVO insertUserChatRoom(UserChatRoomVO userChatRoomVO);
-    
+
     //사용자가 채팅방에서 나간다
     int deleteUserChatRoom(UserChatRoomVO userChatRoomVO);
 
     //메시지등록
     int insertChatMessage(ChatMessageVO chatMessageVO);
+
+    String getUidByEmail(String email);
 
 }

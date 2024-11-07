@@ -20,8 +20,6 @@ public class ChatMessageDTO {
   private String roomId; // 방번호
   private String sender; // 메시지 보낸사람
   private String message; // 메시지
-  @Builder.Default
-  private int userCount = 0; //  채팅방에 있는 사용자수
   
   //입장 메시지 객체를 생성한다 
   public static ChatMessageDTO enterMessage(ChatRoom chatRoom, String sender) {
@@ -30,7 +28,6 @@ public class ChatMessageDTO {
 			  		.type(MessageType.ENTER)
 			  		.roomId(chatRoom.getRoomId())
 			  		.sender(sender)
-			  		.userCount(chatRoom.getUserCount())
 			  		.build();
   	result.typeProcess();
   	return result;
@@ -43,7 +40,6 @@ public class ChatMessageDTO {
 			  		.type(MessageType.LEAVE)
 			  		.roomId(chatRoom.getRoomId())
 			  		.sender(sender)
-			  		.userCount(chatRoom.getUserCount())
 			  		.build();
   	result.typeProcess();
   	return result;
