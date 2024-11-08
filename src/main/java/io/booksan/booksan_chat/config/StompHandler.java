@@ -1,5 +1,6 @@
 package io.booksan.booksan_chat.config;
 
+import java.security.Principal;
 import java.util.Map.Entry;
 
 import org.springframework.context.annotation.Lazy;
@@ -34,35 +35,47 @@ import lombok.extern.slf4j.Slf4j;
  *  
  *  
  */
-
 @Slf4j
 @Component
 public class StompHandler implements ChannelInterceptor {
-  @Lazy
-	private final ChatService chatService;
+
+    @Lazy
+    private final ChatService chatService;
 
     // 생성자 주입
     public StompHandler(@Lazy ChatService chatService) {
         this.chatService = chatService;
     }
-	
+
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
         StompHeaderAccessor accessor = StompHeaderAccessor.wrap(message);
-        
+        String jwtToken = accessor.getFirstNativeHeader("token");
+        //String email = loginCheck(jwtToken);
+        String email = accessor.getFirstNativeHeader("email");
+        if (email != null) {
+            // 이메일을 Principal로 설정
+            accessor.setUser(new Principal() {
+                @Override
+                public String getName() {
+                    return email;
+                }
+            });
+        }
+        log.info("Principal로 이메일 설정: {}", email);
         for (Entry<String, Object> entry : message.getHeaders().entrySet()) {
-          log.info("preSend() header -> {}", entry); 
+            log.info("preSend() header -> {}", entry);
         }
 
         if (StompCommand.CONNECT == accessor.getCommand()) { // websocket 연결요청
-            String jwtToken = accessor.getFirstNativeHeader("token");
             log.info("preSend() CONNECT message = {}", message);
             log.info("preSend() CONNECT channel = {}", channel);
             log.info("preSend() CONNECT accessor = {}", accessor);
             log.info("preSend() CONNECT jwtToken = {}", jwtToken);
         } else if (StompCommand.SUBSCRIBE == accessor.getCommand()) { // 채팅룸 구독요청
-        	/*
-        	 * 예]  header로 전달 되는 키와 값의 종류  
+
+            /*
+        	 * 예]  header로 전달 되는 키와 값의 종류
 						simpMessageType : SUBSCRIBE
 						stompCommand : SUBSCRIBE
 						nativeHeaders : {id=[sub-0], destination=[/sub/chat/room/378de7a1-4ae9-42da-9f01-34d311e1c66c]}
@@ -72,32 +85,29 @@ public class StompHandler implements ChannelInterceptor {
 						simpSessionId : 0ecozkbs
 						simpDestination : /sub/chat/room/378de7a1-4ae9-42da-9f01-34d311e1c66c
 						
-						//구독시 추가 헤더함(사용자 이름)  
+						//구독시 추가 헤더함(사용자 이름)
 							userName : 홍길동
             // header정보에서 구독 destination정보를 얻어 채팅방에 사용자 입장
-          */ 
-        	String simpDestination = (String) accessor.getHeader("simpDestination");
-        	String simpSessionId = (String) accessor.getHeader("simpSessionId");
-        	String sender = (String) accessor.getFirstNativeHeader("sender");
-        	System.out.println("sender = " + sender);
-          if (simpDestination.contains("/sub/chat/room")) {
-          	chatService.userEnterChatRoomUser(simpDestination, simpSessionId, sender);
-          }
+             */
+            String simpDestination = (String) accessor.getHeader("simpDestination");
+            if (simpDestination.contains("/sub/chat/room")) {
+                log.info("***headerData***" + email);
+                chatService.userEnterChatRoomUser(simpDestination, email);
+            }
         } else if (StompCommand.UNSUBSCRIBE == accessor.getCommand()) { //메시지 구독 취소 //채팅방에서 나감 
-        	/*
-        	 * 예]  header로 전달 되는 키와 값의 종류  
-        		simpMessageType : UNSUBSCRIBE
-        		stompCommand : UNSUBSCRIBE
-        		nativeHeaders : {id=[sub-0]}
-        		simpSessionAttributes : {}
-        		simpHeartbeat : [J@1e0982e5
-        		simpSubscriptionId : sub-0
-        		simpSessionId : sxepxewb
-        		*/        	
-        	
-        	String simpSessionId = (String) accessor.getHeader("simpSessionId");
-        	chatService.userLeaveChatRoomUser(simpSessionId);
-        	
+            /*
+            	 * 예]  header로 전달 되는 키와 값의 종류  
+            		simpMessageType : UNSUBSCRIBE
+            		stompCommand : UNSUBSCRIBE
+            		nativeHeaders : {id=[sub-0]}
+            		simpSessionAttributes : {}
+            		simpHeartbeat : [J@1e0982e5
+            		simpSubscriptionId : sub-0
+            		simpSessionId : sxepxewb
+             */
+            String roomId = (String) accessor.getHeader("roomId");
+            chatService.userLeaveChatRoomUser(roomId, email);
+
         } else if (StompCommand.DISCONNECT == accessor.getCommand()) { // Websocket 연결 종료
             // 연결이 종료된 클라이언트 sesssionId로 채팅방 id를 얻는다.
             String sessionId = (String) message.getHeaders().get("simpSessionId");
@@ -105,6 +115,10 @@ public class StompHandler implements ChannelInterceptor {
             log.info("preSend() DISCONNECTED accessor = {}", accessor);
         }
         return message;
+    }
+
+    private String loginCheck(String jwtToken) {
+        return jwtToken;
     }
 
 }

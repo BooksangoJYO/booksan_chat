@@ -57,4 +57,19 @@
         INSERT INTO CHAT_MESSAGE (ROOM_ID, UID, CONTENT)
         VALUES (#{roomId}, #{uid}, #{content}, NOW())
     </insert>
+
+    <select id="getUidByEmail">
+        SELECT uid
+        FROM USERS
+        WHERE email = #{email}
+        AND DISABLED = 'N'
+    </select>
+
+    <select id="getNicknameByEmail">
+        SELECT nickname
+        FROM USERS
+        WHERE email = #{email}
+        AND DISABLED = 'N'
+    </select>
+
 </mapper>
