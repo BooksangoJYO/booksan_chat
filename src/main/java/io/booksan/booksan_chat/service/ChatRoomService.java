@@ -1,5 +1,6 @@
 package io.booksan.booksan_chat.service;
 
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import io.booksan.booksan_chat.dao.ChatDAO;
 import io.booksan.booksan_chat.entity.ChatRoom;
+import io.booksan.booksan_chat.vo.ChatRoomVO;
 import io.booksan.booksan_chat.vo.UserChatRoomVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,6 +31,17 @@ public class ChatRoomService {
     @EventListener(ContextRefreshedEvent.class)
     public void init() {
         chatRoomMap = new LinkedHashMap<>();
+        List<ChatRoomVO> allRoomList = chatDAO.findAllRoom();
+        for (ChatRoomVO chatRoomVO : allRoomList) {
+            Map<String, String> userMap = new HashMap<>();
+            List<UserChatRoomVO> userList = chatDAO.findUsersByRoomId(chatRoomVO.getRoomId());
+            for (UserChatRoomVO userChatRoomVO : userList) {
+                String email = chatDAO.getEmailbyUid(userChatRoomVO.getUid());
+                userMap.put(userChatRoomVO.getUid(), email);
+            }
+            ChatRoom chatRoom = new ChatRoom(chatRoomVO.getRoomId(), chatRoomVO.getName(), userMap);
+            chatRoomMap.put(chatRoom.getRoomId(), chatRoom);
+        }
     }
 
     public List<ChatRoom> findAllRoom() {
@@ -56,6 +69,23 @@ public class ChatRoomService {
         //만들어진 채팅방정보를 토대로 게시글 작성자를 초대
         chatRoom.addUser(uid, email);
         chatRoom.addUser(writerUid, writerEmail);
+
+        //채팅방 정보를 db에저장
+        ChatRoomVO chatRoomVO = new ChatRoomVO();
+        UserChatRoomVO userChatRoomVO = new UserChatRoomVO();
+        chatRoomVO.setRoomId(chatRoom.getRoomId());
+        chatRoomVO.setName(name);
+        chatDAO.insertChatRoom(chatRoomVO);
+        userChatRoomVO.setRoomId(chatRoom.getRoomId());
+        log.info("***user data11 ***" + uid);
+        log.info("***user data22 ***" + writerUid);
+        //구매자 정보 
+        userChatRoomVO.setUid(uid);
+        chatDAO.insertUserChatRoom(userChatRoomVO);
+        //판매자 정보
+        userChatRoomVO.setUid(writerUid);
+        chatDAO.insertUserChatRoom(userChatRoomVO);
+
         return chatRoom;
     }
 
@@ -71,18 +101,14 @@ public class ChatRoomService {
         if (chatRoom != null && !chatRoom.isExistEmail(email)) {
             String uid = chatDAO.getUidByEmail(email);
             chatRoom.addUser(uid, email);
+            UserChatRoomVO userChatRoomVO = new UserChatRoomVO();
+            userChatRoomVO.setRoomId(chatRoom.getRoomId());
+            userChatRoomVO.setUid(uid);
+            chatDAO.insertUserChatRoom(userChatRoomVO);
         }
         return chatRoom;
     }
 
-    // public ChatRoom findRoomSessionId(String sessionId) {
-    //     for (Entry<String, ChatRoom> entry : chatRoomMap.entrySet()) {
-    //         if (entry.getValue().isExistSessionId(sessionId)) {
-    //             return entry.getValue();
-    //         }
-    //     }
-    //     return null;
-    // }
     //사용자가 채팅방에서 퇴장한다
     public void userLeaveChatRoomUser(String roomId, String email) {
         ChatRoom chatRoom = findRoomByRoomId(roomId);

@@ -11,19 +11,27 @@
         ORDER BY INSERT_DAYTIME DESC
     </select>
 
+    <select id="findAllRoom" resultType="io.booksan.booksan_chat.vo.ChatRoomVO">
+        SELECT ROOM_ID, NAME, INSERT_DAYTIME, TYPE
+        FROM CHAT_ROOM
+        where DISABLED = 'N'
+        ORDER BY INSERT_DAYTIME DESC
+    </select>
+
+    
+    <select id="findUsersByRoomId" resultType="io.booksan.booksan_chat.vo.UserChatRoomVO">
+        SELECT room_id , uid
+        FROM USER_CHAT_ROOM
+        where room_id = #{roomId}
+        ORDER BY INSERT_DAYTIME DESC
+    </select>
+
     <!-- 채팅방 생성 -->
     <insert id="insertChatRoom">
         INSERT INTO CHAT_ROOM (ROOM_ID, NAME, TYPE)
-        VALUES (#{roomId}, #{name}, #{type})
+        VALUES (#{roomId}, #{name}, "private")
     </insert>
 
-    <!-- 채팅방 찾기 -->
-    <select id="findRoomSessionId" resultType="io.booksan.booksan_chat.vo.ChatRoomVO">
-        SELECT ROOM_ID, NAME, INSERT_DAYTIME, TYPE
-        FROM CHAT_ROOM
-        WHERE ROOM_ID = #{sessionId}
-        AND DISABLED = 'N'
-    </select>
 
     <!-- 채팅방 제거 -->
     <update id="deleteChatRoom">
@@ -34,13 +42,8 @@
 
     <!-- 사용자 채팅방 입장 -->
     <insert id="insertUserChatRoom">
-        INSERT INTO USER_CHAT_ROOM (ROOM_ID, UID, INSERT_DAYTIME)
-        VALUES (#{roomId}, #{uid}, NOW())
-        <selectKey resultType="io.booksan.booksan_chat.vo.ChatRoomVO" keyProperty="roomId" order="AFTER">
-            SELECT ROOM_ID, NAME, INSERT_DAYTIME, TYPE
-            FROM CHAT_ROOM
-            WHERE ROOM_ID = #{roomId}
-        </selectKey>
+        INSERT INTO USER_CHAT_ROOM (ROOM_ID, UID)
+        VALUES (#{roomId}, #{uid})
     </insert>
 
     <!-- 사용자 채팅방 퇴장 -->
@@ -55,7 +58,7 @@
     <!-- 채팅 메시지 등록 -->
     <insert id="insertChatMessage">
         INSERT INTO CHAT_MESSAGE (ROOM_ID, UID, CONTENT)
-        VALUES (#{roomId}, #{uid}, #{content}, NOW())
+        VALUES (#{roomId}, #{uid}, #{content})
     </insert>
 
     <select id="getUidByEmail">
@@ -71,5 +74,19 @@
         WHERE email = #{email}
         AND DISABLED = 'N'
     </select>
+
+    <select id="getEmailbyUid">
+        SELECT email
+        FROM USERS
+        WHERE uid = #{uid}
+        AND DISABLED = 'N'
+    </select>
+
+    <select id="getMessage" resultType="io.booksan.booksan_chat.vo.ChatMessageVO">
+        SELECT *
+        FROM CHAT_MESSAGE
+        WHERE room_id = #{roomId}
+    </select>
+
 
 </mapper>

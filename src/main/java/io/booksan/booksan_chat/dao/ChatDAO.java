@@ -16,17 +16,18 @@ public interface ChatDAO {
     //참여중인 채팅방 목록
     List<ChatRoomVO> findAllRoomById(String uid);
 
+    List<ChatRoomVO> findAllRoom();
+
+    List<UserChatRoomVO> findUsersByRoomId(String roomId);
+
     //채팅방 생성
     int insertChatRoom(ChatRoomVO chatRoomVO);
-
-    //채팅방 찾기
-    ChatRoomVO findRoomSessionId(String sessionId);
 
     //채팅방 제거
     int deleteChatRoom(String sessionId);
 
     //사용자가 채팅방에 입장한다
-    ChatRoomVO insertUserChatRoom(UserChatRoomVO userChatRoomVO);
+    int insertUserChatRoom(UserChatRoomVO userChatRoomVO);
 
     //사용자가 채팅방에서 나간다
     int deleteUserChatRoom(UserChatRoomVO userChatRoomVO);
@@ -34,6 +35,10 @@ public interface ChatDAO {
     //메시지등록
     int insertChatMessage(ChatMessageVO chatMessageVO);
 
+    List<ChatMessageVO> getMessage(String roomId);
+
     String getUidByEmail(String email);
+
+    String getEmailbyUid(String uid);
 
 }

@@ -1,7 +1,6 @@
 package io.booksan.booksan_chat.config;
 
 import java.security.Principal;
-import java.util.Map.Entry;
 
 import org.springframework.context.annotation.Lazy;
 import org.springframework.messaging.Message;
@@ -42,7 +41,20 @@ public class StompHandler implements ChannelInterceptor {
     @Lazy
     private final ChatService chatService;
 
-    // 생성자 주입
+    private static class UserPrincipal implements Principal {
+
+        private final String email;
+
+        public UserPrincipal(String email) {
+            this.email = email;
+        }
+
+        @Override
+        public String getName() {
+            return email;
+        }
+    }
+
     public StompHandler(@Lazy ChatService chatService) {
         this.chatService = chatService;
     }
@@ -50,75 +62,73 @@ public class StompHandler implements ChannelInterceptor {
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
         StompHeaderAccessor accessor = StompHeaderAccessor.wrap(message);
-        String jwtToken = accessor.getFirstNativeHeader("token");
-        //String email = loginCheck(jwtToken);
-        String email = accessor.getFirstNativeHeader("email");
-        if (email != null) {
-            // 이메일을 Principal로 설정
-            accessor.setUser(new Principal() {
-                @Override
-                public String getName() {
-                    return email;
-                }
-            });
-        }
-        log.info("Principal로 이메일 설정: {}", email);
-        for (Entry<String, Object> entry : message.getHeaders().entrySet()) {
-            log.info("preSend() header -> {}", entry);
-        }
 
-        if (StompCommand.CONNECT == accessor.getCommand()) { // websocket 연결요청
-            log.info("preSend() CONNECT message = {}", message);
-            log.info("preSend() CONNECT channel = {}", channel);
-            log.info("preSend() CONNECT accessor = {}", accessor);
-            log.info("preSend() CONNECT jwtToken = {}", jwtToken);
-        } else if (StompCommand.SUBSCRIBE == accessor.getCommand()) { // 채팅룸 구독요청
+        if (StompCommand.CONNECT == accessor.getCommand()) {
+            // 최초 연결 시에만 토큰 검증 및 사용자 인증 수행
+            String jwtToken = accessor.getFirstNativeHeader("token");
+            String email = accessor.getFirstNativeHeader("email");
 
-            /*
-        	 * 예]  header로 전달 되는 키와 값의 종류
-						simpMessageType : SUBSCRIBE
-						stompCommand : SUBSCRIBE
-						nativeHeaders : {id=[sub-0], destination=[/sub/chat/room/378de7a1-4ae9-42da-9f01-34d311e1c66c]}
-						simpSessionAttributes : {}
-						simpHeartbeat : [J@43300a0f
-						simpSubscriptionId : sub-0
-						simpSessionId : 0ecozkbs
-						simpDestination : /sub/chat/room/378de7a1-4ae9-42da-9f01-34d311e1c66c
-						
-						//구독시 추가 헤더함(사용자 이름)
-							userName : 홍길동
-            // header정보에서 구독 destination정보를 얻어 채팅방에 사용자 입장
-             */
-            String simpDestination = (String) accessor.getHeader("simpDestination");
-            if (simpDestination.contains("/sub/chat/room")) {
-                log.info("***headerData***" + email);
-                chatService.userEnterChatRoomUser(simpDestination, email);
+            if (email != null) {
+                // 인증 성공 시 Principal 설정 및 세션에 사용자 정보 저장
+                Principal principal = new UserPrincipal(email);
+                accessor.setUser(principal);
+                accessor.getSessionAttributes().put("USER_EMAIL", email);
+                log.info("New WebSocket Connection - User: {}", email);
+            } else {
+                log.error("Connection attempt with no email");
+                throw new IllegalArgumentException("No email provided");
             }
-        } else if (StompCommand.UNSUBSCRIBE == accessor.getCommand()) { //메시지 구독 취소 //채팅방에서 나감 
-            /*
-            	 * 예]  header로 전달 되는 키와 값의 종류  
-            		simpMessageType : UNSUBSCRIBE
-            		stompCommand : UNSUBSCRIBE
-            		nativeHeaders : {id=[sub-0]}
-            		simpSessionAttributes : {}
-            		simpHeartbeat : [J@1e0982e5
-            		simpSubscriptionId : sub-0
-            		simpSessionId : sxepxewb
-             */
-            String roomId = (String) accessor.getHeader("roomId");
-            chatService.userLeaveChatRoomUser(roomId, email);
-
-        } else if (StompCommand.DISCONNECT == accessor.getCommand()) { // Websocket 연결 종료
-            // 연결이 종료된 클라이언트 sesssionId로 채팅방 id를 얻는다.
-            String sessionId = (String) message.getHeaders().get("simpSessionId");
-            log.info("preSend() DISCONNECTED sessionId = {}", sessionId);
-            log.info("preSend() DISCONNECTED accessor = {}", accessor);
+        } else {
+            // CONNECT 이외의 요청에서는 세션에서 사용자 정보를 가져옴
+            Principal user = accessor.getUser();
+            if (user == null) {
+                String sessionEmail = (String) accessor.getSessionAttributes().get("USER_EMAIL");
+                if (sessionEmail != null) {
+                    accessor.setUser(new UserPrincipal(sessionEmail));
+                }
+            }
         }
+
+        // 각 Command 별 처리
+        switch (accessor.getCommand()) {
+            case SUBSCRIBE:
+                handleSubscribe(accessor);
+                break;
+            case UNSUBSCRIBE:
+                handleUnsubscribe(accessor);
+                break;
+            case DISCONNECT:
+                handleDisconnect(message);
+                break;
+            default:
+                break;
+        }
+
         return message;
     }
 
-    private String loginCheck(String jwtToken) {
-        return jwtToken;
+    private void handleSubscribe(StompHeaderAccessor accessor) {
+        String simpDestination = (String) accessor.getHeader("simpDestination");
+        Principal user = accessor.getUser();
+
+        if (simpDestination != null && simpDestination.contains("/sub/chat/room") && user != null) {
+            log.info("User {} subscribing to {}", user.getName(), simpDestination);
+            chatService.userEnterChatRoomUser(simpDestination, user.getName());
+        }
     }
 
+    private void handleUnsubscribe(StompHeaderAccessor accessor) {
+        String roomId = (String) accessor.getHeader("roomId");
+        Principal user = accessor.getUser();
+
+        if (roomId != null && user != null) {
+            log.info("User {} leaving room {}", user.getName(), roomId);
+            chatService.userLeaveChatRoomUser(roomId, user.getName());
+        }
+    }
+
+    private void handleDisconnect(Message<?> message) {
+        String sessionId = (String) message.getHeaders().get("simpSessionId");
+        log.info("WebSocket Connection Closed - Session: {}", sessionId);
+    }
 }
