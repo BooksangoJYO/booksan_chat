@@ -11,7 +11,9 @@ import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
 import io.booksan.booksan_chat.dao.ChatDAO;
+import io.booksan.booksan_chat.entity.AlarmCountEntity;
 import io.booksan.booksan_chat.entity.ChatRoom;
+import io.booksan.booksan_chat.entity.ReadMessageEntity;
 import io.booksan.booksan_chat.vo.ChatRoomVO;
 import io.booksan.booksan_chat.vo.UserChatRoomVO;
 import lombok.RequiredArgsConstructor;
@@ -38,9 +40,12 @@ public class ChatRoomService {
             for (UserChatRoomVO userChatRoomVO : userList) {
                 String email = chatDAO.getEmailbyUid(userChatRoomVO.getUid());
                 userMap.put(userChatRoomVO.getUid(), email);
+                log.info("***userDATA" + userMap.toString());
+
             }
             ChatRoom chatRoom = new ChatRoom(chatRoomVO.getRoomId(), chatRoomVO.getName(), userMap);
             chatRoomMap.put(chatRoom.getRoomId(), chatRoom);
+            log.info("*******" + chatRoomMap.toString());
         }
     }
 
@@ -77,8 +82,6 @@ public class ChatRoomService {
         chatRoomVO.setName(name);
         chatDAO.insertChatRoom(chatRoomVO);
         userChatRoomVO.setRoomId(chatRoom.getRoomId());
-        log.info("***user data11 ***" + uid);
-        log.info("***user data22 ***" + writerUid);
         //구매자 정보 
         userChatRoomVO.setUid(uid);
         chatDAO.insertUserChatRoom(userChatRoomVO);
@@ -113,6 +116,7 @@ public class ChatRoomService {
     public void userLeaveChatRoomUser(String roomId, String email) {
         ChatRoom chatRoom = findRoomByRoomId(roomId);
         String uid = chatDAO.getUidByEmail(email);
+        log.info("****** delete *****" + chatRoom.toString() + " ***" + uid);
         if (chatRoom != null) {
             chatRoom.removeUser(uid);
             UserChatRoomVO userChatRoomVO = new UserChatRoomVO();
@@ -125,6 +129,29 @@ public class ChatRoomService {
             }
 
         }
+    }
+
+    public void insertReadMessage(String roomId, String uid, int messageId) {
+        ChatRoom chatRoom = chatRoomMap.get(roomId);
+        if (chatRoom != null && chatRoom.getUserCount() != 0) {
+            for (String userUid : chatRoom.getUserMapUid()) {
+                if (!userUid.equals(uid)) {
+                    ReadMessageEntity readMessageEntity = new ReadMessageEntity();
+                    readMessageEntity.setRoomId(roomId);
+                    readMessageEntity.setMessageId(messageId);
+                    readMessageEntity.setSender(uid);
+                    readMessageEntity.setReceiver(userUid);
+                    chatDAO.insertReadMessage(readMessageEntity);
+                    chatDAO.updateAlarmCount(new AlarmCountEntity(userUid, "increase", 0));
+                }
+            }
+        }
+    }
+
+    List<ChatRoomVO> getAlarmRooms(String email) {
+        String uid = chatDAO.getUidByEmail(email);
+        log.info("*****+emailData****" + email + uid);
+        return chatDAO.getAlarmRooms(uid);
     }
 
 }

@@ -62,7 +62,6 @@ public class StompHandler implements ChannelInterceptor {
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
         StompHeaderAccessor accessor = StompHeaderAccessor.wrap(message);
-
         if (StompCommand.CONNECT == accessor.getCommand()) {
             // 최초 연결 시에만 토큰 검증 및 사용자 인증 수행
             String jwtToken = accessor.getFirstNativeHeader("token");
@@ -118,7 +117,8 @@ public class StompHandler implements ChannelInterceptor {
     }
 
     private void handleUnsubscribe(StompHeaderAccessor accessor) {
-        String roomId = (String) accessor.getHeader("roomId");
+        String roomId = (String) accessor.getFirstNativeHeader("roomId");
+        log.info("*** delete roomID ****" + roomId);
         Principal user = accessor.getUser();
 
         if (roomId != null && user != null) {

@@ -23,6 +23,7 @@
         SELECT room_id , uid
         FROM USER_CHAT_ROOM
         where room_id = #{roomId}
+        AND EXIT_DAYTIME IS NULL
         ORDER BY INSERT_DAYTIME DESC
     </select>
 
@@ -49,14 +50,13 @@
     <!-- 사용자 채팅방 퇴장 -->
     <update id="deleteUserChatRoom">
         UPDATE USER_CHAT_ROOM
-        SET EXIT_DAYTIME = NOW(),
-            DISABLED = 'Y'
+        SET EXIT_DAYTIME = NOW()
         WHERE ROOM_ID = #{roomId}
         AND UID = #{uid}
     </update>
 
     <!-- 채팅 메시지 등록 -->
-    <insert id="insertChatMessage">
+    <insert id="insertChatMessage" useGeneratedKeys="true" keyProperty="messageId">
         INSERT INTO CHAT_MESSAGE (ROOM_ID, UID, CONTENT)
         VALUES (#{roomId}, #{uid}, #{content})
     </insert>
@@ -88,5 +88,40 @@
         WHERE room_id = #{roomId}
     </select>
 
+    <insert id="insertReadMessage">
+        INSERT INTO CHAT_READ_MESSAGE (room_id, sender, receiver,message_id)
+        VALUES (#{roomId},#{sender},#{receiver},#{messageId})
+    </insert>
+
+    <update id="updateReadMessage">
+        UPDATE CHAT_READ_MESSAGE
+        SET read_time = NOW()
+        WHERE ROOM_ID = #{roomId}
+        AND receiver = #{receiver}
+        AND read_time IS NULL
+    </update>
+
+    <update id="updateAlarmCount">
+        UPDATE USERS
+        <choose>
+            <when test="action == 'increase'">
+                SET alarm_count = alarm_count + 1
+            </when>
+            <when test="action == 'decrease'">
+                SET alarm_count = alarm_count - #{alarmCount}
+            </when>
+        </choose>
+        WHERE uid = #{uid}
+    </update>
+
+    <select id="getAlarmRooms" resultType="io.booksan.booksan_chat.vo.ChatRoomVO">
+        SELECT DISTINCT cr.ROOM_ID, cr.NAME, cr.INSERT_DAYTIME, cr.TYPE
+        FROM CHAT_ROOM cr
+        JOIN CHAT_READ_MESSAGE rm ON cr.ROOM_ID = rm.ROOM_ID
+        WHERE rm.receiver = #{uid}
+        AND rm.read_time IS NULL
+        AND cr.DISABLED = 'N'
+        ORDER BY cr.INSERT_DAYTIME
+    </select>
 
 </mapper>

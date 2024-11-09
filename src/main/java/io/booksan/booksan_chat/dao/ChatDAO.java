@@ -4,6 +4,8 @@ import java.util.List;
 
 import org.apache.ibatis.annotations.Mapper;
 
+import io.booksan.booksan_chat.entity.AlarmCountEntity;
+import io.booksan.booksan_chat.entity.ReadMessageEntity;
 import io.booksan.booksan_chat.vo.ChatMessageVO;
 import io.booksan.booksan_chat.vo.ChatRoomVO;
 import io.booksan.booksan_chat.vo.UserChatRoomVO;
@@ -40,5 +42,13 @@ public interface ChatDAO {
     String getUidByEmail(String email);
 
     String getEmailbyUid(String uid);
+
+    int insertReadMessage(ReadMessageEntity readMessageEntity);
+
+    int updateReadMessage(ReadMessageEntity readMessageEntity);
+
+    int updateAlarmCount(AlarmCountEntity alarmCountEntity);
+
+    List<ChatRoomVO> getAlarmRooms(String uid);
 
 }

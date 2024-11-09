@@ -2,6 +2,7 @@ package io.booksan.booksan_chat.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
@@ -10,7 +11,11 @@ import org.springframework.stereotype.Service;
 import io.booksan.booksan_chat.dao.ChatDAO;
 import io.booksan.booksan_chat.dto.AlarmMessageDTO;
 import io.booksan.booksan_chat.dto.ChatMessageDTO;
+import io.booksan.booksan_chat.dto.ChatRoomDTO;
+import io.booksan.booksan_chat.entity.AlarmCountEntity;
 import io.booksan.booksan_chat.entity.ChatRoom;
+import io.booksan.booksan_chat.entity.ReadMessageEntity;
+import io.booksan.booksan_chat.util.MapperUtil;
 import io.booksan.booksan_chat.vo.ChatMessageVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +29,7 @@ public class ChatService {
     private final ChatRoomService chatRoomService;
     @Autowired
     private SimpMessageSendingOperations messagingTemplate;
+    private final MapperUtil mapperUtil;
 
     public List<ChatRoom> findAllRoom() {
         return chatRoomService.findAllRoom();
@@ -52,40 +58,38 @@ public class ChatService {
 
     public void userEnterChatRoomUser(String simpDestination, String email) {
         ChatRoom chatRoom = chatRoomService.userEnterChatRoomUser(simpDestination, email);
-        String sender = chatDAO.getNicknameByEmail(email);
         if (chatRoom != null) {
             if (!chatRoom.isExistEmail(email)) {
                 log.info("***personal message***");
                 //서버에서 클라이언트로 구독 메시지를 전달한다 
                 //채팅방의 입장한 모든 사용자에게 입장으로 알린다
                 messagingTemplate.convertAndSend("/sub/chat/room/" + chatRoom.getRoomId(),
-                        ChatMessageDTO.enterMessage(chatRoom, sender));
+                        ChatMessageDTO.enterMessage(chatRoom, email));
 
                 //채팅방의 사용자수 변경을 알린다 
                 messagingTemplate.convertAndSend("/sub/alarm", new AlarmMessageDTO(chatRoom.getRoomId()));
-            } else {
-                // // 개인에게만 이전 메시지 전송 (convertAndSendToUser 사용)
-                // log.info("***private message***");
-                // messagingTemplate.convertAndSendToUser(
-                //         email, // 특정 사용자
-                //         "/sub/chat/room/" + chatRoom.getRoomId(),
-                //         ChatMessageDTO.leaveMessage(chatRoom, sender)
-                // );
             }
+
+            //해당 유저가 들어온 채팅방의 메세지를 전부 읽음 처리한다
+            String uid = chatDAO.getUidByEmail(email);
+            ReadMessageEntity readMessageEntity = new ReadMessageEntity();
+            readMessageEntity.setRoomId(chatRoom.getRoomId());
+            readMessageEntity.setReceiver(uid);
+            int result = chatDAO.updateReadMessage(readMessageEntity);
+            chatDAO.updateAlarmCount(new AlarmCountEntity(uid, "decrease", result));
         }
     }
 
     public void userLeaveChatRoomUser(String roomId, String email) {
         ChatRoom chatRoom = chatRoomService.findRoomByRoomId(roomId);
-        String sender = chatDAO.getNicknameByEmail(email);
         if (chatRoom != null) {
             chatRoomService.userLeaveChatRoomUser(roomId, email);
-            //서버에서 클라이언트로 구독 메시지를 전달한다 
+            //서버에서 클라이언트로 구독 메시지를 전달한다
             //채팅방의 입장한 모든 사용자에게 퇴장으로 알린다
             messagingTemplate.convertAndSend("/sub/chat/room/" + chatRoom.getRoomId(),
-                    ChatMessageDTO.leaveMessage(chatRoom, sender));
+                    ChatMessageDTO.leaveMessage(chatRoom, email));
         }
-        //채팅방의 사용자수 변경을 알린다 
+        //채팅방의 사용자수 변경을 알린다
         messagingTemplate.convertAndSend("/sub/alarm", new AlarmMessageDTO(""));
     }
 
@@ -96,6 +100,9 @@ public class ChatService {
         String uid = chatDAO.getUidByEmail(message.getSender());
         chatMessageVO.setUid(uid);
         chatDAO.insertChatMessage(chatMessageVO);
+        log.info("message ID " + chatMessageVO.getMessageId());
+        //메세지를 읽지 않는 사람들을 등록
+        chatRoomService.insertReadMessage(message.getRoomId(), uid, chatMessageVO.getMessageId());
     }
 
     public List<ChatMessageDTO> getMessage(String roomId) {
@@ -111,4 +118,11 @@ public class ChatService {
         }
         return response;
     }
+
+    public List<ChatRoomDTO> getAlarmRooms(String email) {
+        return chatRoomService.getAlarmRooms(email).stream()
+                .map(chatRoomVO -> mapperUtil.map(chatRoomVO, ChatRoomDTO.class))
+                .collect(Collectors.toList());
+    }
+
 }

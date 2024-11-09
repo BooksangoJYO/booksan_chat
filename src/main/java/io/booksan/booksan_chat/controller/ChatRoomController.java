@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.booksan.booksan_chat.dto.ChatRoomDTO;
 import io.booksan.booksan_chat.entity.ChatRoom;
 import io.booksan.booksan_chat.service.ChatService;
 import lombok.RequiredArgsConstructor;
@@ -45,6 +46,12 @@ public class ChatRoomController {
     @GetMapping("/room/inviteRooms/{email}")
     public String getMethodName(@PathVariable("email") String email) {
         return new String();
+    }
+
+    @GetMapping("/rooms/alarm/{email}")
+    @ResponseBody
+    public List<ChatRoomDTO> alarmRooms(@PathVariable("email") String email) {
+        return chatService.getAlarmRooms(email);
     }
 
 }
