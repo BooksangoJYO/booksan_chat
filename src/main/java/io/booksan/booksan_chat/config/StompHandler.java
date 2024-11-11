@@ -1,6 +1,7 @@
 package io.booksan.booksan_chat.config;
 
 import java.security.Principal;
+import java.util.Map;
 
 import org.springframework.context.annotation.Lazy;
 import org.springframework.messaging.Message;
@@ -11,6 +12,7 @@ import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.stereotype.Component;
 
 import io.booksan.booksan_chat.service.ChatService;
+import io.booksan.booksan_chat.util.TokenChecker;
 import lombok.extern.slf4j.Slf4j;
 
 /*
@@ -38,6 +40,8 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class StompHandler implements ChannelInterceptor {
 
+    private final TokenChecker tokenChecker;
+
     @Lazy
     private final ChatService chatService;
 
@@ -55,20 +59,24 @@ public class StompHandler implements ChannelInterceptor {
         }
     }
 
-    public StompHandler(@Lazy ChatService chatService) {
+    public StompHandler(@Lazy ChatService chatService, TokenChecker tokenChecker) {
         this.chatService = chatService;
+        this.tokenChecker = tokenChecker;
     }
 
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
         StompHeaderAccessor accessor = StompHeaderAccessor.wrap(message);
         if (StompCommand.CONNECT == accessor.getCommand()) {
-            // 최초 연결 시에만 토큰 검증 및 사용자 인증 수행
-            String jwtToken = accessor.getFirstNativeHeader("token");
-            String email = accessor.getFirstNativeHeader("email");
-
-            if (email != null) {
-                // 인증 성공 시 Principal 설정 및 세션에 사용자 정보 저장
+            //최초 연결 시에만 토큰 검증 및 사용자 인증 수행
+            String accessToken = accessor.getFirstNativeHeader("accessToken");
+            String refreshToken = accessor.getFirstNativeHeader("refreshToken");
+            log.info("accessToken" + accessToken);
+            Map<String, Object> response = tokenChecker.tokenCheck(accessToken, refreshToken);
+            log.info("token access and email" + response.toString());
+            if ((Boolean) response.get("status")) {
+                //인증 성공 시 Principal 설정 및 세션에 사용자 정보 저장
+                String email = (String) response.get("email");
                 Principal principal = new UserPrincipal(email);
                 accessor.setUser(principal);
                 accessor.getSessionAttributes().put("USER_EMAIL", email);
