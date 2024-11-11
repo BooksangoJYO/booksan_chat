@@ -63,4 +63,9 @@ public class ChatRoom implements Comparable<ChatRoom> {
         return userMap.size();
     }
 
+    @JsonIgnore
+    public List<String> getUserMapUid() {
+        return new ArrayList<>(userMap.keySet());
+    }
+
 }
