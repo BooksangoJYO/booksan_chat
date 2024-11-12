@@ -52,10 +52,6 @@ public class ChatService {
         return chatRoomService.findRoomByRoomId(roomId);
     }
 
-    public List<ChatRoom> findRoomByUid(String email) {
-        return chatRoomService.findRoomByEmail(email);
-    }
-
     public void userEnterChatRoomUser(String simpDestination, String email) {
         ChatRoom chatRoom = chatRoomService.userEnterChatRoomUser(simpDestination, email);
         if (chatRoom != null) {
@@ -71,12 +67,11 @@ public class ChatService {
             }
 
             //해당 유저가 들어온 채팅방의 메세지를 전부 읽음 처리한다
-            String uid = chatDAO.getUidByEmail(email);
             ReadMessageEntity readMessageEntity = new ReadMessageEntity();
             readMessageEntity.setRoomId(chatRoom.getRoomId());
-            readMessageEntity.setReceiver(uid);
+            readMessageEntity.setReceiver(email);
             int result = chatDAO.updateReadMessage(readMessageEntity);
-            chatDAO.updateAlarmCount(new AlarmCountEntity(uid, "decrease", result));
+            chatDAO.updateAlarmCount(new AlarmCountEntity(email, "decrease", result));
         }
     }
 
@@ -97,12 +92,11 @@ public class ChatService {
         ChatMessageVO chatMessageVO = new ChatMessageVO();
         chatMessageVO.setContent(message.getMessage());
         chatMessageVO.setRoomId(message.getRoomId());
-        String uid = chatDAO.getUidByEmail(message.getSender());
-        chatMessageVO.setUid(uid);
+        chatMessageVO.setEmail(message.getSender());
         chatDAO.insertChatMessage(chatMessageVO);
         log.info("message ID " + chatMessageVO.getMessageId());
         //메세지를 읽지 않는 사람들을 등록
-        chatRoomService.insertReadMessage(message.getRoomId(), uid, chatMessageVO.getMessageId());
+        chatRoomService.insertReadMessage(message.getRoomId(), message.getSender(), chatMessageVO.getMessageId());
     }
 
     public List<ChatMessageDTO> getMessage(String roomId) {
@@ -112,7 +106,7 @@ public class ChatService {
             ChatMessageDTO chatMessageDTO = new ChatMessageDTO();
             chatMessageDTO.setRoomId(roomId);
             chatMessageDTO.setMessage(chatMessageVO.getContent());
-            String email = chatDAO.getEmailbyUid(chatMessageVO.getUid());
+            String email = chatMessageVO.getEmail();
             chatMessageDTO.setSender(email);
             response.add(chatMessageDTO);
         }

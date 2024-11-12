@@ -8,8 +8,9 @@ import lombok.Setter;
 @Getter
 @Setter
 public class UserChatRoomVO {
+
     private String roomId;
-    private String uid;
+    private String email;
     private Date insertDaytime;
     private Date exitDaytime;
 }

@@ -9,7 +9,7 @@ import lombok.Setter;
 @AllArgsConstructor
 public class AlarmCountEntity {
 
-    private String uid;
+    private String email;
     private String action;
     private int alarmCount;
 }

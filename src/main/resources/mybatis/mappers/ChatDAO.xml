@@ -6,7 +6,7 @@
     <select id="findAllRoomById" resultType="io.booksan.booksan_chat.vo.ChatRoomVO">
         SELECT ROOM_ID, NAME, INSERT_DAYTIME, TYPE
         FROM CHAT_ROOM
-        WHERE UID = #{uid}
+        WHERE email = #{email}
         AND DISABLED = 'N'
         ORDER BY INSERT_DAYTIME DESC
     </select>
@@ -20,7 +20,7 @@
 
     
     <select id="findUsersByRoomId" resultType="io.booksan.booksan_chat.vo.UserChatRoomVO">
-        SELECT room_id , uid
+        SELECT room_id , email
         FROM USER_CHAT_ROOM
         where room_id = #{roomId}
         AND EXIT_DAYTIME IS NULL
@@ -43,8 +43,8 @@
 
     <!-- 사용자 채팅방 입장 -->
     <insert id="insertUserChatRoom">
-        INSERT INTO USER_CHAT_ROOM (ROOM_ID, UID)
-        VALUES (#{roomId}, #{uid})
+        INSERT INTO USER_CHAT_ROOM (ROOM_ID, EMAIL)
+        VALUES (#{roomId}, #{email})
     </insert>
 
     <!-- 사용자 채팅방 퇴장 -->
@@ -52,35 +52,14 @@
         UPDATE USER_CHAT_ROOM
         SET EXIT_DAYTIME = NOW()
         WHERE ROOM_ID = #{roomId}
-        AND UID = #{uid}
+        AND EMAIL = #{email}
     </update>
 
     <!-- 채팅 메시지 등록 -->
     <insert id="insertChatMessage" useGeneratedKeys="true" keyProperty="messageId">
-        INSERT INTO CHAT_MESSAGE (ROOM_ID, UID, CONTENT)
-        VALUES (#{roomId}, #{uid}, #{content})
+        INSERT INTO CHAT_MESSAGE (ROOM_ID, email, CONTENT)
+        VALUES (#{roomId}, #{email}, #{content})
     </insert>
-
-    <select id="getUidByEmail">
-        SELECT uid
-        FROM USERS
-        WHERE email = #{email}
-        AND DISABLED = 'N'
-    </select>
-
-    <select id="getNicknameByEmail">
-        SELECT nickname
-        FROM USERS
-        WHERE email = #{email}
-        AND DISABLED = 'N'
-    </select>
-
-    <select id="getEmailbyUid">
-        SELECT email
-        FROM USERS
-        WHERE uid = #{uid}
-        AND DISABLED = 'N'
-    </select>
 
     <select id="getMessage" resultType="io.booksan.booksan_chat.vo.ChatMessageVO">
         SELECT *
@@ -111,14 +90,14 @@
                 SET alarm_count = alarm_count - #{alarmCount}
             </when>
         </choose>
-        WHERE uid = #{uid}
+        WHERE email = #{email}
     </update>
 
     <select id="getAlarmRooms" resultType="io.booksan.booksan_chat.vo.ChatRoomVO">
         SELECT DISTINCT cr.ROOM_ID, cr.NAME, cr.INSERT_DAYTIME, cr.TYPE
         FROM CHAT_ROOM cr
         JOIN CHAT_READ_MESSAGE rm ON cr.ROOM_ID = rm.ROOM_ID
-        WHERE rm.receiver = #{uid}
+        WHERE rm.receiver = #{email}
         AND rm.read_time IS NULL
         AND cr.DISABLED = 'N'
         ORDER BY cr.INSERT_DAYTIME
