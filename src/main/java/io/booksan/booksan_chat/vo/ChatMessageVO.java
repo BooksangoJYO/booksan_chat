@@ -8,9 +8,10 @@ import lombok.Setter;
 @Getter
 @Setter
 public class ChatMessageVO {
+
     private int messageId;
     private String roomId;
-    private String uid;
+    private String email;
     private String content;
     private Date insertDaytime;
 }

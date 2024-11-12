@@ -70,9 +70,9 @@ public class StompHandler implements ChannelInterceptor {
         if (StompCommand.CONNECT == accessor.getCommand()) {
             //최초 연결 시에만 토큰 검증 및 사용자 인증 수행
             String accessToken = accessor.getFirstNativeHeader("accessToken");
-            String refreshToken = accessor.getFirstNativeHeader("refreshToken");
             log.info("accessToken" + accessToken);
-            Map<String, Object> response = tokenChecker.tokenCheck(accessToken, refreshToken);
+            Map<String, Object> response = tokenChecker.tokenCheck(accessToken);
+            log.info("***** return data ***" + response.toString());
             log.info("token access and email" + response.toString());
             if ((Boolean) response.get("status")) {
                 //인증 성공 시 Principal 설정 및 세션에 사용자 정보 저장

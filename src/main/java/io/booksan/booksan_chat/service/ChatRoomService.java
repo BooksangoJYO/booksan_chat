@@ -1,9 +1,10 @@
 package io.booksan.booksan_chat.service;
 
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.context.event.ContextRefreshedEvent;
@@ -35,17 +36,14 @@ public class ChatRoomService {
         chatRoomMap = new LinkedHashMap<>();
         List<ChatRoomVO> allRoomList = chatDAO.findAllRoom();
         for (ChatRoomVO chatRoomVO : allRoomList) {
-            Map<String, String> userMap = new HashMap<>();
+            Set<String> userSet = new HashSet<>();
             List<UserChatRoomVO> userList = chatDAO.findUsersByRoomId(chatRoomVO.getRoomId());
             for (UserChatRoomVO userChatRoomVO : userList) {
-                String email = chatDAO.getEmailbyUid(userChatRoomVO.getUid());
-                userMap.put(userChatRoomVO.getUid(), email);
-                log.info("***userDATA" + userMap.toString());
-
+                String email = userChatRoomVO.getEmail();
+                userSet.add(email);
             }
-            ChatRoom chatRoom = new ChatRoom(chatRoomVO.getRoomId(), chatRoomVO.getName(), userMap);
+            ChatRoom chatRoom = new ChatRoom(chatRoomVO.getRoomId(), chatRoomVO.getName(), userSet);
             chatRoomMap.put(chatRoom.getRoomId(), chatRoom);
-            log.info("*******" + chatRoomMap.toString());
         }
     }
 
@@ -69,11 +67,9 @@ public class ChatRoomService {
     public ChatRoom createChatRoom(String name, String email, String writerEmail) {
         ChatRoom chatRoom = new ChatRoom(name);
         chatRoomMap.put(chatRoom.getRoomId(), chatRoom);
-        String uid = chatDAO.getUidByEmail(email);
-        String writerUid = chatDAO.getUidByEmail(writerEmail);
         //만들어진 채팅방정보를 토대로 게시글 작성자를 초대
-        chatRoom.addUser(uid, email);
-        chatRoom.addUser(writerUid, writerEmail);
+        chatRoom.addUser(email);
+        chatRoom.addUser(writerEmail);
 
         //채팅방 정보를 db에저장
         ChatRoomVO chatRoomVO = new ChatRoomVO();
@@ -83,10 +79,10 @@ public class ChatRoomService {
         chatDAO.insertChatRoom(chatRoomVO);
         userChatRoomVO.setRoomId(chatRoom.getRoomId());
         //구매자 정보 
-        userChatRoomVO.setUid(uid);
+        userChatRoomVO.setEmail(email);
         chatDAO.insertUserChatRoom(userChatRoomVO);
         //판매자 정보
-        userChatRoomVO.setUid(writerUid);
+        userChatRoomVO.setEmail(writerEmail);
         chatDAO.insertUserChatRoom(userChatRoomVO);
 
         return chatRoom;
@@ -102,11 +98,10 @@ public class ChatRoomService {
         }
         ChatRoom chatRoom = chatRoomMap.get(newRoomId);
         if (chatRoom != null && !chatRoom.isExistEmail(email)) {
-            String uid = chatDAO.getUidByEmail(email);
-            chatRoom.addUser(uid, email);
+            chatRoom.addUser(email);
             UserChatRoomVO userChatRoomVO = new UserChatRoomVO();
             userChatRoomVO.setRoomId(chatRoom.getRoomId());
-            userChatRoomVO.setUid(uid);
+            userChatRoomVO.setEmail(email);
             chatDAO.insertUserChatRoom(userChatRoomVO);
         }
         return chatRoom;
@@ -115,12 +110,10 @@ public class ChatRoomService {
     //사용자가 채팅방에서 퇴장한다
     public void userLeaveChatRoomUser(String roomId, String email) {
         ChatRoom chatRoom = findRoomByRoomId(roomId);
-        String uid = chatDAO.getUidByEmail(email);
-        log.info("****** delete *****" + chatRoom.toString() + " ***" + uid);
         if (chatRoom != null) {
-            chatRoom.removeUser(uid);
+            chatRoom.removeUser(email);
             UserChatRoomVO userChatRoomVO = new UserChatRoomVO();
-            userChatRoomVO.setUid(uid);
+            userChatRoomVO.setEmail(email);
             userChatRoomVO.setRoomId(roomId);
             chatDAO.deleteUserChatRoom(userChatRoomVO);
             if (chatRoom.getUserCount() == 0) {
@@ -131,27 +124,26 @@ public class ChatRoomService {
         }
     }
 
-    public void insertReadMessage(String roomId, String uid, int messageId) {
+    public void insertReadMessage(String roomId, String email, int messageId) {
         ChatRoom chatRoom = chatRoomMap.get(roomId);
         if (chatRoom != null && chatRoom.getUserCount() != 0) {
-            for (String userUid : chatRoom.getUserMapUid()) {
-                if (!userUid.equals(uid)) {
+            for (String userEmail : chatRoom.getUserSet()) {
+                if (!userEmail.equals(email)) {
                     ReadMessageEntity readMessageEntity = new ReadMessageEntity();
                     readMessageEntity.setRoomId(roomId);
                     readMessageEntity.setMessageId(messageId);
-                    readMessageEntity.setSender(uid);
-                    readMessageEntity.setReceiver(userUid);
+                    readMessageEntity.setSender(email);
+                    readMessageEntity.setReceiver(userEmail);
                     chatDAO.insertReadMessage(readMessageEntity);
-                    chatDAO.updateAlarmCount(new AlarmCountEntity(userUid, "increase", 0));
+                    chatDAO.updateAlarmCount(new AlarmCountEntity(userEmail, "increase", 0));
                 }
             }
         }
     }
 
     List<ChatRoomVO> getAlarmRooms(String email) {
-        String uid = chatDAO.getUidByEmail(email);
-        log.info("*****+emailData****" + email + uid);
-        return chatDAO.getAlarmRooms(uid);
+        log.info("*****+emailData****" + email);
+        return chatDAO.getAlarmRooms(email);
     }
 
 }

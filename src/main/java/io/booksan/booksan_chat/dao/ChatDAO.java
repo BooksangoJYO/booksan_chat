@@ -13,10 +13,8 @@ import io.booksan.booksan_chat.vo.UserChatRoomVO;
 @Mapper
 public interface ChatDAO {
 
-    String getNicknameByEmail(String email);
-
     //참여중인 채팅방 목록
-    List<ChatRoomVO> findAllRoomById(String uid);
+    List<ChatRoomVO> findAllRoomByEmail(String email);
 
     List<ChatRoomVO> findAllRoom();
 
@@ -39,16 +37,12 @@ public interface ChatDAO {
 
     List<ChatMessageVO> getMessage(String roomId);
 
-    String getUidByEmail(String email);
-
-    String getEmailbyUid(String uid);
-
     int insertReadMessage(ReadMessageEntity readMessageEntity);
 
     int updateReadMessage(ReadMessageEntity readMessageEntity);
 
     int updateAlarmCount(AlarmCountEntity alarmCountEntity);
 
-    List<ChatRoomVO> getAlarmRooms(String uid);
+    List<ChatRoomVO> getAlarmRooms(String email);
 
 }

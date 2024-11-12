@@ -1,12 +1,12 @@
 package io.booksan.booksan_chat.controller;
 
 import java.util.List;
-import java.util.Map;
 
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -29,13 +29,10 @@ public class ChatRoomController {
 
     @GetMapping("/rooms")
     @ResponseBody
-    public List<ChatRoom> rooms(@RequestHeader Map<String, String> headers) {
-        String accessToken = headers.get("accesstoken");
-        String refreshToken = headers.get("refreshtoken");
-        log.info("****accesstoken" + accessToken);
-        Map<String, Object> response = tokenChecker.tokenCheck(accessToken, refreshToken);
-        if ((Boolean) response.get("status")) {
-            return chatService.findRoomByEmail((String) response.get("email"));
+    public List<ChatRoom> rooms(@AuthenticationPrincipal UserDetails userDetails) {
+        String email = userDetails.getUsername();
+        if (email != null) {
+            return chatService.findRoomByEmail(email);
         }
 
         return null;
@@ -43,12 +40,10 @@ public class ChatRoomController {
 
     @PostMapping("/room/insert/{name}/{writerEmail}")
     @ResponseBody
-    public ChatRoom createRoom(@PathVariable("name") String name, @PathVariable("writerEmail") String writerEmail, @RequestHeader Map<String, String> headers) {
-        String accessToken = headers.get("accesstoken");
-        String refreshToken = headers.get("refreshtoken");
-        Map<String, Object> response = tokenChecker.tokenCheck(accessToken, refreshToken);
-        if ((Boolean) response.get("status")) {
-            return chatService.createChatRoom(name, (String) response.get("email"), writerEmail);
+    public ChatRoom createRoom(@PathVariable("name") String name, @PathVariable("writerEmail") String writerEmail, @AuthenticationPrincipal UserDetails userDetails) {
+        String email = userDetails.getUsername();
+        if (email != null) {
+            return chatService.createChatRoom(name, email, writerEmail);
         } else {
             return null;
         }
@@ -60,15 +55,10 @@ public class ChatRoomController {
         return chatService.findRoomByRoomId(roomId);
     }
 
-    @GetMapping("/room/inviteRooms/{email}")
-    public String getMethodName(@PathVariable("email") String email) {
-        return new String();
-    }
-
     @GetMapping("/rooms/alarm/{email}")
     @ResponseBody
-    public List<ChatRoomDTO> alarmRooms(@PathVariable("email") String email) {
-        return chatService.getAlarmRooms(email);
+    public List<ChatRoomDTO> alarmRooms(@AuthenticationPrincipal UserDetails userDetails) {
+        return chatService.getAlarmRooms(userDetails.getUsername());
     }
 
 }

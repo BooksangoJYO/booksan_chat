@@ -15,7 +15,7 @@ public class TokenChecker {
 
     private final RestTemplate restTemplate = new RestTemplate();
 
-    public Map<String, Object> tokenCheck(String accessToken, String refreshToken) {
+    public Map<String, Object> tokenCheck(String accessToken) {
         Map<String, Object> result = new HashMap<>();
         String apiUrl = String.format(
                 "http://192.168.0.15:8081/api/users/checkToken"
@@ -24,7 +24,6 @@ public class TokenChecker {
             //HttpHeaders 설정
             HttpHeaders putHeaders = new HttpHeaders();
             putHeaders.set("accessToken", accessToken);
-            putHeaders.set("refreshToken", refreshToken);
             //HttpEntity 객체 생성( 본문은 필요 없으므로 void 사용)
             HttpEntity<String> entity = new HttpEntity<>(putHeaders);
 
