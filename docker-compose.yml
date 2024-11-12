@@ -1,0 +1,14 @@
+version: "3"
+services:
+  booksan_chat:
+    restart: on-failure
+    build: .
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mysql
+    networks:
+      - network
+
+networks:
+  network:

@@ -3,6 +3,7 @@ package io.booksan.booksan_chat.util;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -15,10 +16,13 @@ public class TokenChecker {
 
     private final RestTemplate restTemplate = new RestTemplate();
 
+    @Value("${booksan.user}")
+    private String userUrl;
+
     public Map<String, Object> tokenCheck(String accessToken) {
         Map<String, Object> result = new HashMap<>();
         String apiUrl = String.format(
-                "http://192.168.0.15:8081/api/users/checkToken"
+                "http://" + userUrl + "/api/users/checkToken"
         );
         if (accessToken != null) {
             //HttpHeaders 설정
