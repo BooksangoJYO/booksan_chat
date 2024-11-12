@@ -1,6 +1,6 @@
 FROM eclipse-temurin:17-jdk-jammy as builder
 VOLUME /tmp
-COPY build/libs/devopt-0.0.1-SNAPSHOT.jar app.jar
+COPY build/libs/booksan_chat-0.0.1-SNAPSHOT.jar app.jar
 ENV USE_POST 8080
 ENTRYPOINT ["java","-jar", "-Dserver.port=${USE_POST}", "/app.jar"]
 
