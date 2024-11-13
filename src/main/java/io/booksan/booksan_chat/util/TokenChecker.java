@@ -22,7 +22,7 @@ public class TokenChecker {
     public Map<String, Object> tokenCheck(String accessToken) {
         Map<String, Object> result = new HashMap<>();
         String apiUrl = String.format(
-                "http://" + userUrl + "/api/users/checkToken"
+                userUrl + "/api/users/checkToken"
         );
         if (accessToken != null) {
             //HttpHeaders 설정
