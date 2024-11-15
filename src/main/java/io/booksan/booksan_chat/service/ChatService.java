@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import io.booksan.booksan_chat.dao.ChatDAO;
 import io.booksan.booksan_chat.dto.AlarmMessageDTO;
@@ -17,6 +18,7 @@ import io.booksan.booksan_chat.entity.ChatRoom;
 import io.booksan.booksan_chat.entity.ReadMessageEntity;
 import io.booksan.booksan_chat.util.MapperUtil;
 import io.booksan.booksan_chat.vo.ChatMessageVO;
+import io.booksan.booksan_chat.vo.ChatRoomVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -39,9 +41,9 @@ public class ChatService {
         return chatRoomService.findRoomByEmail(email);
     }
 
-    public ChatRoom createChatRoom(String name, String email, String writerEmail) {
+    public ChatRoom createChatRoom(ChatRoomVO chatRoomVO, String email, String writerEmail) {
 
-        ChatRoom chatRoom = chatRoomService.createChatRoom(name, email, writerEmail);
+        ChatRoom chatRoom = chatRoomService.createChatRoom(chatRoomVO, email, writerEmail);
         //채팅방의 사용자수 변경을 알린다 
         messagingTemplate.convertAndSend("/sub/alarm", new AlarmMessageDTO(""));
         log.info("*** alarm message send***");
@@ -75,7 +77,8 @@ public class ChatService {
         }
     }
 
-    public void userLeaveChatRoomUser(String roomId, String email) {
+    @Transactional
+    public int userLeaveChatRoomUser(String roomId, String email) {
         ChatRoom chatRoom = chatRoomService.findRoomByRoomId(roomId);
         if (chatRoom != null) {
             chatRoomService.userLeaveChatRoomUser(roomId, email);
@@ -83,9 +86,10 @@ public class ChatService {
             //채팅방의 입장한 모든 사용자에게 퇴장으로 알린다
             messagingTemplate.convertAndSend("/sub/chat/room/" + chatRoom.getRoomId(),
                     ChatMessageDTO.leaveMessage(chatRoom, email));
+            messagingTemplate.convertAndSend("/sub/alarm", new AlarmMessageDTO(""));
+            return 1;
         }
-        //채팅방의 사용자수 변경을 알린다
-        messagingTemplate.convertAndSend("/sub/alarm", new AlarmMessageDTO(""));
+        return -1;
     }
 
     public void saveMessage(ChatMessageDTO message) {

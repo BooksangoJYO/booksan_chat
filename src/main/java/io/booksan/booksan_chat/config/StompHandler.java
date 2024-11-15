@@ -125,14 +125,7 @@ public class StompHandler implements ChannelInterceptor {
     }
 
     private void handleUnsubscribe(StompHeaderAccessor accessor) {
-        String roomId = (String) accessor.getFirstNativeHeader("roomId");
-        log.info("*** delete roomID ****" + roomId);
-        Principal user = accessor.getUser();
-
-        if (roomId != null && user != null) {
-            log.info("User {} leaving room {}", user.getName(), roomId);
-            chatService.userLeaveChatRoomUser(roomId, user.getName());
-        }
+        log.info("***unsubScribe***");
     }
 
     private void handleDisconnect(Message<?> message) {

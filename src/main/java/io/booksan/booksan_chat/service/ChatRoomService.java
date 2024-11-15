@@ -64,21 +64,19 @@ public class ChatRoomService {
     }
 
     //게시글작성자와 연결하기 위한 채팅방 생성
-    public ChatRoom createChatRoom(String name, String email, String writerEmail) {
-        ChatRoom chatRoom = new ChatRoom(name);
+    public ChatRoom createChatRoom(ChatRoomVO chatRoomVO, String email, String writerEmail) {
+        ChatRoom chatRoom = new ChatRoom(chatRoomVO.getName());
         chatRoomMap.put(chatRoom.getRoomId(), chatRoom);
         //만들어진 채팅방정보를 토대로 게시글 작성자를 초대
         chatRoom.addUser(email);
         chatRoom.addUser(writerEmail);
 
         //채팅방 정보를 db에저장
-        ChatRoomVO chatRoomVO = new ChatRoomVO();
         UserChatRoomVO userChatRoomVO = new UserChatRoomVO();
         chatRoomVO.setRoomId(chatRoom.getRoomId());
-        chatRoomVO.setName(name);
         chatDAO.insertChatRoom(chatRoomVO);
         userChatRoomVO.setRoomId(chatRoom.getRoomId());
-        //구매자 정보 
+        //구매자 정보
         userChatRoomVO.setEmail(email);
         chatDAO.insertUserChatRoom(userChatRoomVO);
         //판매자 정보
@@ -110,7 +108,7 @@ public class ChatRoomService {
     //사용자가 채팅방에서 퇴장한다
     public void userLeaveChatRoomUser(String roomId, String email) {
         ChatRoom chatRoom = findRoomByRoomId(roomId);
-        if (chatRoom != null) {
+        if (chatRoom != null && chatRoom.getUserSet().contains(email)) {
             chatRoom.removeUser(email);
             UserChatRoomVO userChatRoomVO = new UserChatRoomVO();
             userChatRoomVO.setEmail(email);

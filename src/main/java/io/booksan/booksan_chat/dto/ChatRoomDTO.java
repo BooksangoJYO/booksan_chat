@@ -11,6 +11,7 @@ public class ChatRoomDTO {
 
     private String roomId;
     private String name;
+    private int dealId;
     private Date insertDaytime;
     private String type;
 

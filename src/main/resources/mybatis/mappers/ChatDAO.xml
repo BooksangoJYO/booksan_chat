@@ -29,8 +29,8 @@
 
     <!-- 채팅방 생성 -->
     <insert id="insertChatRoom">
-        INSERT INTO CHAT_ROOM (ROOM_ID, NAME, TYPE)
-        VALUES (#{roomId}, #{name}, "private")
+        INSERT INTO CHAT_ROOM (ROOM_ID, NAME, TYPE,DEAL_ID)
+        VALUES (#{roomId}, #{name}, "private",#{dealId})
     </insert>
 
 
