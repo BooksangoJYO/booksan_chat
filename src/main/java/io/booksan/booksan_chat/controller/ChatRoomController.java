@@ -7,6 +7,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -14,7 +15,8 @@ import org.springframework.web.bind.annotation.RestController;
 import io.booksan.booksan_chat.dto.ChatRoomDTO;
 import io.booksan.booksan_chat.entity.ChatRoom;
 import io.booksan.booksan_chat.service.ChatService;
-import io.booksan.booksan_chat.util.TokenChecker;
+import io.booksan.booksan_chat.util.MapperUtil;
+import io.booksan.booksan_chat.vo.ChatRoomVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -24,7 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ChatRoomController {
 
-    private final TokenChecker tokenChecker;
+    private final MapperUtil mapperUtil;
     private final ChatService chatService;
 
     @GetMapping("/rooms")
@@ -38,12 +40,12 @@ public class ChatRoomController {
         return null;
     }
 
-    @PostMapping("/room/insert/{name}/{writerEmail}")
+    @PostMapping("/room/insert/{writerEmail}")
     @ResponseBody
-    public ChatRoom createRoom(@PathVariable("name") String name, @PathVariable("writerEmail") String writerEmail, @AuthenticationPrincipal UserDetails userDetails) {
+    public ChatRoom createRoom(@RequestBody ChatRoomDTO chatRoomDTO, @PathVariable("writerEmail") String writerEmail, @AuthenticationPrincipal UserDetails userDetails) {
         String email = userDetails.getUsername();
         if (email != null) {
-            return chatService.createChatRoom(name, email, writerEmail);
+            return chatService.createChatRoom(mapperUtil.map(chatRoomDTO, ChatRoomVO.class), email, writerEmail);
         } else {
             return null;
         }
@@ -61,4 +63,17 @@ public class ChatRoomController {
         return chatService.getAlarmRooms(userDetails.getUsername());
     }
 
+    @PostMapping("/room/leave/{roomId}")
+    @ResponseBody
+    public String leaveRoom(@PathVariable("roomId") String roomId, @AuthenticationPrincipal UserDetails userDetails) {
+        String email = userDetails.getUsername();
+        if (roomId != null && email != null) {
+            log.info("User {} leaving room {}", email, roomId);
+            int result = chatService.userLeaveChatRoomUser(roomId, email);
+            if (result == 1) {
+                return "success";
+            }
+        }
+        return "false";
+    }
 }
