@@ -57,7 +57,7 @@ public class ChatRoomController {
         return chatService.findRoomByRoomId(roomId);
     }
 
-    @GetMapping("/rooms/alert/{email}")
+    @GetMapping("/rooms/alert")
     @ResponseBody
     public List<ChatRoomDTO> chatAlertRooms(@AuthenticationPrincipal UserDetails userDetails) {
         return chatService.getChatAlertRooms(userDetails.getUsername());
