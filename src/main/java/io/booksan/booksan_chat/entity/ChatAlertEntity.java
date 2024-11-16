@@ -7,9 +7,9 @@ import lombok.Setter;
 @Getter
 @Setter
 @AllArgsConstructor
-public class AlarmCountEntity {
+public class ChatAlertEntity {
 
     private String email;
     private String action;
-    private int alarmCount;
+    private int chatAlert;
 }

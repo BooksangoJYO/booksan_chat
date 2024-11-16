@@ -12,7 +12,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
 import io.booksan.booksan_chat.dao.ChatDAO;
-import io.booksan.booksan_chat.entity.AlarmCountEntity;
+import io.booksan.booksan_chat.entity.ChatAlertEntity;
 import io.booksan.booksan_chat.entity.ChatRoom;
 import io.booksan.booksan_chat.entity.ReadMessageEntity;
 import io.booksan.booksan_chat.vo.ChatRoomVO;
@@ -133,15 +133,15 @@ public class ChatRoomService {
                     readMessageEntity.setSender(email);
                     readMessageEntity.setReceiver(userEmail);
                     chatDAO.insertReadMessage(readMessageEntity);
-                    chatDAO.updateAlarmCount(new AlarmCountEntity(userEmail, "increase", 0));
+                    chatDAO.updateChatAlert(new ChatAlertEntity(userEmail, "increase", 0));
                 }
             }
         }
     }
 
-    List<ChatRoomVO> getAlarmRooms(String email) {
+    List<ChatRoomVO> getChatAlertRooms(String email) {
         log.info("*****+emailData****" + email);
-        return chatDAO.getAlarmRooms(email);
+        return chatDAO.getChatAlertRooms(email);
     }
 
 }

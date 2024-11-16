@@ -80,20 +80,20 @@
         AND read_time IS NULL
     </update>
 
-    <update id="updateAlarmCount">
+    <update id="updateChatAlert">
         UPDATE USERS
         <choose>
             <when test="action == 'increase'">
-                SET alarm_count = alarm_count + 1
+                SET chat_alert = chat_alert + 1
             </when>
             <when test="action == 'decrease'">
-                SET alarm_count = alarm_count - #{alarmCount}
+                SET chat_alert = chat_alert - #{chatAlert}
             </when>
         </choose>
         WHERE email = #{email}
     </update>
 
-    <select id="getAlarmRooms" resultType="io.booksan.booksan_chat.vo.ChatRoomVO">
+    <select id="getChatAlertRooms" resultType="io.booksan.booksan_chat.vo.ChatRoomVO">
         SELECT DISTINCT cr.ROOM_ID, cr.NAME, cr.INSERT_DAYTIME, cr.TYPE
         FROM CHAT_ROOM cr
         JOIN CHAT_READ_MESSAGE rm ON cr.ROOM_ID = rm.ROOM_ID

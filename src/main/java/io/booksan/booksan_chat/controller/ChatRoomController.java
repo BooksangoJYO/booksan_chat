@@ -57,10 +57,10 @@ public class ChatRoomController {
         return chatService.findRoomByRoomId(roomId);
     }
 
-    @GetMapping("/rooms/alarm/{email}")
+    @GetMapping("/rooms/alert/{email}")
     @ResponseBody
-    public List<ChatRoomDTO> alarmRooms(@AuthenticationPrincipal UserDetails userDetails) {
-        return chatService.getAlarmRooms(userDetails.getUsername());
+    public List<ChatRoomDTO> chatAlertRooms(@AuthenticationPrincipal UserDetails userDetails) {
+        return chatService.getChatAlertRooms(userDetails.getUsername());
     }
 
     @PostMapping("/room/leave/{roomId}")
