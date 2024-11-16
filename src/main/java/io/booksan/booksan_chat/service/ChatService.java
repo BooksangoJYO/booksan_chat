@@ -13,7 +13,7 @@ import io.booksan.booksan_chat.dao.ChatDAO;
 import io.booksan.booksan_chat.dto.AlarmMessageDTO;
 import io.booksan.booksan_chat.dto.ChatMessageDTO;
 import io.booksan.booksan_chat.dto.ChatRoomDTO;
-import io.booksan.booksan_chat.entity.AlarmCountEntity;
+import io.booksan.booksan_chat.entity.ChatAlertEntity;
 import io.booksan.booksan_chat.entity.ChatRoom;
 import io.booksan.booksan_chat.entity.ReadMessageEntity;
 import io.booksan.booksan_chat.util.MapperUtil;
@@ -73,7 +73,7 @@ public class ChatService {
             readMessageEntity.setRoomId(chatRoom.getRoomId());
             readMessageEntity.setReceiver(email);
             int result = chatDAO.updateReadMessage(readMessageEntity);
-            chatDAO.updateAlarmCount(new AlarmCountEntity(email, "decrease", result));
+            chatDAO.updateChatAlert(new ChatAlertEntity(email, "decrease", result));
         }
     }
 
@@ -117,8 +117,8 @@ public class ChatService {
         return response;
     }
 
-    public List<ChatRoomDTO> getAlarmRooms(String email) {
-        return chatRoomService.getAlarmRooms(email).stream()
+    public List<ChatRoomDTO> getChatAlertRooms(String email) {
+        return chatRoomService.getChatAlertRooms(email).stream()
                 .map(chatRoomVO -> mapperUtil.map(chatRoomVO, ChatRoomDTO.class))
                 .collect(Collectors.toList());
     }
