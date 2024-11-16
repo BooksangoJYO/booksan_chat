@@ -4,6 +4,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -65,25 +66,41 @@ public class ChatRoomService {
 
     //게시글작성자와 연결하기 위한 채팅방 생성
     public ChatRoom createChatRoom(ChatRoomVO chatRoomVO, String email, String writerEmail) {
-        ChatRoom chatRoom = new ChatRoom(chatRoomVO.getName());
-        chatRoomMap.put(chatRoom.getRoomId(), chatRoom);
-        //만들어진 채팅방정보를 토대로 게시글 작성자를 초대
-        chatRoom.addUser(email);
-        chatRoom.addUser(writerEmail);
+        Optional<ChatRoom> existingRoom = findCommonChatRoom(chatRoomMap, email, writerEmail, chatRoomVO.getName());
+        if (existingRoom.isPresent()) {
+            return existingRoom.get();
+        } else {
+            ChatRoom chatRoom = new ChatRoom(chatRoomVO.getName());
+            chatRoomMap.put(chatRoom.getRoomId(), chatRoom);
+            //만들어진 채팅방정보를 토대로 게시글 작성자를 초대
+            chatRoom.addUser(email);
+            chatRoom.addUser(writerEmail);
 
-        //채팅방 정보를 db에저장
-        UserChatRoomVO userChatRoomVO = new UserChatRoomVO();
-        chatRoomVO.setRoomId(chatRoom.getRoomId());
-        chatDAO.insertChatRoom(chatRoomVO);
-        userChatRoomVO.setRoomId(chatRoom.getRoomId());
-        //구매자 정보
-        userChatRoomVO.setEmail(email);
-        chatDAO.insertUserChatRoom(userChatRoomVO);
-        //판매자 정보
-        userChatRoomVO.setEmail(writerEmail);
-        chatDAO.insertUserChatRoom(userChatRoomVO);
+            //채팅방 정보를 db에저장
+            UserChatRoomVO userChatRoomVO = new UserChatRoomVO();
+            chatRoomVO.setRoomId(chatRoom.getRoomId());
+            chatDAO.insertChatRoom(chatRoomVO);
+            userChatRoomVO.setRoomId(chatRoom.getRoomId());
+            //구매자 정보
+            userChatRoomVO.setEmail(email);
+            chatDAO.insertUserChatRoom(userChatRoomVO);
+            //판매자 정보
+            userChatRoomVO.setEmail(writerEmail);
+            chatDAO.insertUserChatRoom(userChatRoomVO);
 
-        return chatRoom;
+            return chatRoom;
+        }
+    }
+
+    public Optional<ChatRoom> findCommonChatRoom(Map<String, ChatRoom> chatRoomMap,
+            String user1Email,
+            String user2Email,
+            String roomName) {
+        return chatRoomMap.values().stream()
+                .filter(room -> room.getUserSet().contains(user1Email)
+                && room.getUserSet().contains(user2Email)
+                && room.getName().equals(roomName))
+                .findAny();
     }
 
     //사용자가 채팅방에 입장한다
