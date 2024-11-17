@@ -1,11 +1,10 @@
 package io.booksan.booksan_chat.service;
 
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.context.event.ContextRefreshedEvent;
@@ -37,13 +36,12 @@ public class ChatRoomService {
         chatRoomMap = new LinkedHashMap<>();
         List<ChatRoomVO> allRoomList = chatDAO.findAllRoom();
         for (ChatRoomVO chatRoomVO : allRoomList) {
-            Set<String> userSet = new HashSet<>();
+            Map<String, String> userMap = new HashMap<>();
             List<UserChatRoomVO> userList = chatDAO.findUsersByRoomId(chatRoomVO.getRoomId());
             for (UserChatRoomVO userChatRoomVO : userList) {
-                String email = userChatRoomVO.getEmail();
-                userSet.add(email);
+                userMap.put(userChatRoomVO.getEmail(), userChatRoomVO.getUserType());
             }
-            ChatRoom chatRoom = new ChatRoom(chatRoomVO.getRoomId(), chatRoomVO.getName(), userSet);
+            ChatRoom chatRoom = new ChatRoom(chatRoomVO.getRoomId(), chatRoomVO.getName(), chatRoomVO.getDealId(), userMap);
             chatRoomMap.put(chatRoom.getRoomId(), chatRoom);
         }
     }
@@ -71,11 +69,11 @@ public class ChatRoomService {
             return existingRoom.get();
         } else {
             ChatRoom chatRoom = new ChatRoom(chatRoomVO.getName());
+            chatRoom.setDealId(chatRoomVO.getDealId());
             chatRoomMap.put(chatRoom.getRoomId(), chatRoom);
             //만들어진 채팅방정보를 토대로 게시글 작성자를 초대
-            chatRoom.addUser(email);
-            chatRoom.addUser(writerEmail);
-
+            chatRoom.addUser(email, "customer");
+            chatRoom.addUser(writerEmail, "seller");
             //채팅방 정보를 db에저장
             UserChatRoomVO userChatRoomVO = new UserChatRoomVO();
             chatRoomVO.setRoomId(chatRoom.getRoomId());
@@ -83,9 +81,11 @@ public class ChatRoomService {
             userChatRoomVO.setRoomId(chatRoom.getRoomId());
             //구매자 정보
             userChatRoomVO.setEmail(email);
+            userChatRoomVO.setUserType("customer");
             chatDAO.insertUserChatRoom(userChatRoomVO);
             //판매자 정보
             userChatRoomVO.setEmail(writerEmail);
+            userChatRoomVO.setUserType("seller");
             chatDAO.insertUserChatRoom(userChatRoomVO);
 
             return chatRoom;
@@ -97,8 +97,8 @@ public class ChatRoomService {
             String user2Email,
             String roomName) {
         return chatRoomMap.values().stream()
-                .filter(room -> room.getUserSet().contains(user1Email)
-                && room.getUserSet().contains(user2Email)
+                .filter(room -> room.getUserMap().keySet().contains(user1Email)
+                && room.getUserMap().keySet().contains(user2Email)
                 && room.getName().equals(roomName))
                 .findAny();
     }
@@ -113,10 +113,11 @@ public class ChatRoomService {
         }
         ChatRoom chatRoom = chatRoomMap.get(newRoomId);
         if (chatRoom != null && !chatRoom.isExistEmail(email)) {
-            chatRoom.addUser(email);
+            chatRoom.addUser(email, "customer");
             UserChatRoomVO userChatRoomVO = new UserChatRoomVO();
             userChatRoomVO.setRoomId(chatRoom.getRoomId());
             userChatRoomVO.setEmail(email);
+            userChatRoomVO.setUserType("customer");
             chatDAO.insertUserChatRoom(userChatRoomVO);
         }
         return chatRoom;
@@ -125,7 +126,7 @@ public class ChatRoomService {
     //사용자가 채팅방에서 퇴장한다
     public void userLeaveChatRoomUser(String roomId, String email) {
         ChatRoom chatRoom = findRoomByRoomId(roomId);
-        if (chatRoom != null && chatRoom.getUserSet().contains(email)) {
+        if (chatRoom != null && chatRoom.getUserMap().keySet().contains(email)) {
             chatRoom.removeUser(email);
             UserChatRoomVO userChatRoomVO = new UserChatRoomVO();
             userChatRoomVO.setEmail(email);
@@ -142,7 +143,7 @@ public class ChatRoomService {
     public void insertReadMessage(String roomId, String email, int messageId) {
         ChatRoom chatRoom = chatRoomMap.get(roomId);
         if (chatRoom != null && chatRoom.getUserCount() != 0) {
-            for (String userEmail : chatRoom.getUserSet()) {
+            for (String userEmail : chatRoom.getUserMap().keySet()) {
                 if (!userEmail.equals(email)) {
                     ReadMessageEntity readMessageEntity = new ReadMessageEntity();
                     readMessageEntity.setRoomId(roomId);
@@ -157,8 +158,14 @@ public class ChatRoomService {
     }
 
     List<ChatRoomVO> getChatAlertRooms(String email) {
-        log.info("*****+emailData****" + email);
         return chatDAO.getChatAlertRooms(email);
+    }
+
+    List<ChatRoom> findRoomByDealId(String email, int dealId) {
+        List<ChatRoom> list = chatRoomMap.values().stream()
+                .filter(chatRoom -> chatRoom.getDealId() == dealId && chatRoom.getUserMap().keySet().contains(email))
+                .collect(Collectors.toList());
+        return list;
     }
 
 }

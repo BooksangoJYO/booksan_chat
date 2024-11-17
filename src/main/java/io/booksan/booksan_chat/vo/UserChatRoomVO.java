@@ -13,4 +13,5 @@ public class UserChatRoomVO {
     private String email;
     private Date insertDaytime;
     private Date exitDaytime;
+    private String userType;
 }

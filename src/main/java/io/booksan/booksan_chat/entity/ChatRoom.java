@@ -1,7 +1,7 @@
 package io.booksan.booksan_chat.entity;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 import lombok.AllArgsConstructor;
@@ -15,7 +15,8 @@ public class ChatRoom implements Comparable<ChatRoom> {
 
     private String roomId; //채팅방 아이디
     private String name;   //채팅방 이름
-    private Set<String> userSet = new HashSet<>();   //채팅방에 입장한 사용자 email에 대한 정보
+    private int dealId;
+    private Map<String, String> userMap = new HashMap<>();   //채팅방에 입장한 사용자 email에 대한 정보
 
     public ChatRoom(String name) {
         this.roomId = UUID.randomUUID().toString();
@@ -30,20 +31,20 @@ public class ChatRoom implements Comparable<ChatRoom> {
         return name.compareToIgnoreCase(o.name);
     }
 
-    public void addUser(String email) {
-        userSet.add(email);
+    public void addUser(String email, String userType) {
+        userMap.put(email, userType);
     }
 
     public void removeUser(String email) {
-        userSet.remove(email);
+        userMap.remove(email);
     }
 
     public boolean isExistEmail(String email) {
-        return userSet.contains(email);
+        return userMap.keySet().contains(email);
     }
 
     public int getUserCount() {
-        return userSet.size();
+        return userMap.size();
     }
 
 }
