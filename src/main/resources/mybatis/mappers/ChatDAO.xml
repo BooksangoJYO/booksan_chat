@@ -4,7 +4,7 @@
 <mapper namespace="io.booksan.booksan_chat.dao.ChatDAO">
     <!-- 참여중인 채팅방 목록 조회 -->
     <select id="findAllRoomById" resultType="io.booksan.booksan_chat.vo.ChatRoomVO">
-        SELECT ROOM_ID, NAME, INSERT_DAYTIME, TYPE
+        SELECT ROOM_ID, NAME, INSERT_DAYTIME, TYPE , DEAL_ID
         FROM CHAT_ROOM
         WHERE email = #{email}
         AND DISABLED = 'N'
@@ -12,7 +12,7 @@
     </select>
 
     <select id="findAllRoom" resultType="io.booksan.booksan_chat.vo.ChatRoomVO">
-        SELECT ROOM_ID, NAME, INSERT_DAYTIME, TYPE
+        SELECT ROOM_ID, NAME, INSERT_DAYTIME, TYPE, DEAL_ID
         FROM CHAT_ROOM
         where DISABLED = 'N'
         ORDER BY INSERT_DAYTIME DESC
@@ -20,7 +20,7 @@
 
     
     <select id="findUsersByRoomId" resultType="io.booksan.booksan_chat.vo.UserChatRoomVO">
-        SELECT room_id , email
+        SELECT room_id , email , user_type
         FROM USER_CHAT_ROOM
         where room_id = #{roomId}
         AND EXIT_DAYTIME IS NULL
@@ -43,8 +43,8 @@
 
     <!-- 사용자 채팅방 입장 -->
     <insert id="insertUserChatRoom">
-        INSERT INTO USER_CHAT_ROOM (ROOM_ID, EMAIL)
-        VALUES (#{roomId}, #{email})
+        INSERT INTO USER_CHAT_ROOM (ROOM_ID, EMAIL,USER_TYPE)
+        VALUES (#{roomId}, #{email},#{userType})
     </insert>
 
     <!-- 사용자 채팅방 퇴장 -->

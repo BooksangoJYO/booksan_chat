@@ -123,4 +123,8 @@ public class ChatService {
                 .collect(Collectors.toList());
     }
 
+    public List<ChatRoom> findRoomByDealId(String email, int dealId) {
+        return chatRoomService.findRoomByDealId(email, dealId);
+    }
+
 }

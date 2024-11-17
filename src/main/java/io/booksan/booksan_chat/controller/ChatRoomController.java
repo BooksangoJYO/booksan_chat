@@ -31,10 +31,21 @@ public class ChatRoomController {
 
     @GetMapping("/rooms")
     @ResponseBody
-    public List<ChatRoom> rooms(@AuthenticationPrincipal UserDetails userDetails) {
+    public List<ChatRoom> getRooms(@AuthenticationPrincipal UserDetails userDetails) {
         String email = userDetails.getUsername();
         if (email != null) {
             return chatService.findRoomByEmail(email);
+        }
+
+        return null;
+    }
+
+    @GetMapping("/rooms/seller/{dealId}")
+    @ResponseBody
+    public List<ChatRoom> getSellerRooms(@PathVariable("dealId") int dealId, @AuthenticationPrincipal UserDetails userDetails) {
+        String email = userDetails.getUsername();
+        if (email != null) {
+            return chatService.findRoomByDealId(email, dealId);
         }
 
         return null;
