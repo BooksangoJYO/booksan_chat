@@ -94,7 +94,7 @@
     </update>
 
     <select id="getChatAlertRooms" resultType="io.booksan.booksan_chat.vo.ChatRoomVO">
-        SELECT DISTINCT cr.ROOM_ID, cr.NAME, cr.INSERT_DAYTIME, cr.TYPE
+        SELECT DISTINCT cr.ROOM_ID, cr.NAME, cr.INSERT_DAYTIME, cr.TYPE, cr.DEAL_ID
         FROM CHAT_ROOM cr
         JOIN CHAT_READ_MESSAGE rm ON cr.ROOM_ID = rm.ROOM_ID
         WHERE rm.receiver = #{email}
