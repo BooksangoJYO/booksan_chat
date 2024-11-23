@@ -1,16 +1,3 @@
-GD
-version: "3"  services:   traefik:     image: traefik:v2.10     command:       - "--api.insecure=true"        - "--providers.docker=true"       - "--providers.docker.exposedbydefault=false"       - "--entrypoints.web.address=:80"       - "--entrypoints.websecure.address=:443"            ports:       - "80:80"       - "443:443"     volumes:       - "/var/run/docker.sock:/var/run/docker.sock:ro"     networks:       - network    booksan_chat:     restart: on-failure     build: .     deploy:       replicas: 2     labels:       - "traefik.enable=true"       - "traefik.http.middlewares.sslheader.headers.customrequestheaders.X-Forwarded-Proto=https"       # WebSocket과 API 설정       - "traefik.http.routers.chat.rule=Host(`) && (PathPrefix(/ws-stomp) || PathPrefix(/pub) || PathPrefix(/sub) || PathPrefix(/topic) || PathPrefix(/queue`))"       - "traefik.http.routers.chat.entrypoints=websecure"       - "traefik.http.services.chat.loadbalancer.server.port=8080"      environment:       - USE_POST=8080     networks:       - network  networks:   network: 이럼 설정 제대로 된건가 host안에는 도메인주소넣엇어
-
-
-Docker Compose 파일을 분석해보겠습니다. 기본적인 구조는 잘 되어있지만, 몇 가지 개선이 필요해 보입니다.
-
-SSL/TLS 설정이 빠져있습니다. websecure 엔드포인트를 사용하고 있는데 인증서 설정이 없습니다.
-Host 규칙이 비어있습니다 (Host(``))
-다음과 같이 수정하는 것을 제안드립니다:
-
-yaml
-
-Copy
 version: "3"
 
 services:
@@ -44,7 +31,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.middlewares.sslheader.headers.customrequestheaders.X-Forwarded-Proto=https"
       # WebSocket과 API 설정
-      - "traefik.http.routers.chat.rule=Host(`chat.booksan.com`) && (PathPrefix(`/ws-stomp`) || PathPrefix(`/pub`) || PathPrefix(`/sub`) || PathPrefix(`/topic`) || PathPrefix(`/queue`))"
+      - "traefik.http.routers.chat.rule=Host(`chat.booksan.shop`) && (PathPrefix(`/ws-stomp`) || PathPrefix(`/pub`) || PathPrefix(`/sub`) || PathPrefix(`/topic`) || PathPrefix(`/queue`))"
       - "traefik.http.routers.chat.entrypoints=websecure"
       - "traefik.http.routers.chat.tls=true"
       - "traefik.http.routers.chat.tls.certresolver=myresolver"
@@ -56,4 +43,5 @@ services:
 
 networks:
   network:
+  
   
