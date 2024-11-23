@@ -25,8 +25,6 @@ public class SecurityConfig {
     private String frontUrl;
     @Value("${booksan.users}")
     private String usersUrl;
-    @Value("${booksan.board}")
-    private String boardUrl;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -64,7 +62,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(Arrays.asList(frontUrl, boardUrl, usersUrl)); // 실제 운영환경에서는 구체적인 도메인 지정 필요
+        configuration.setAllowedOriginPatterns(Arrays.asList(frontUrl, usersUrl)); // 실제 운영환경에서는 구체적인 도메인 지정 필요
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);

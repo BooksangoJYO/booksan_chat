@@ -26,12 +26,24 @@ services:
     restart: on-failure
     build: .
     deploy:
-      replicas: 2
+      replicas: 1
     labels:
       - "traefik.enable=true"
       - "traefik.http.middlewares.sslheader.headers.customrequestheaders.X-Forwarded-Proto=https"
-      # WebSocket과 API 설정
-      - "traefik.http.routers.chat.rule=Host(`chat.booksan.shop`) && (PathPrefix(`/ws-stomp`) || PathPrefix(`/pub`) || PathPrefix(`/sub`) || PathPrefix(`/topic`) || PathPrefix(`/queue`))"
+      # CORS 설정을 하나로 합치기
+      -"traefik.http.middlewares.cors.headers.accesscontrolalloworiginlist=https://www.booksan.shop,https://booksan.shop,https://users.booksan.shop"
+      # CORS 미들웨어 적용
+      - "traefik.http.routers.chat.middlewares=cors@docker"
+      # 추가 CORS 헤더 설정
+      - "traefik.http.middlewares.cors.headers.accesscontrolallowmethods=GET,POST,PUT,DELETE,OPTIONS"
+      - "traefik.http.middlewares.cors.headers.accesscontrolallowheaders=*"
+      - "traefik.http.middlewares.cors.headers.accesscontrolmaxage=100"
+      - "traefik.http.middlewares.cors.headers.addvaryheader=true"
+      - "traefik.http.middlewares.cors.headers.accesscontrolallowheaders=Origin,Accept,X-Requested-With,Content-Type,Access-Control-Request-Method,Access-Control-Request-Headers,Authorization,accesstoken,refreshtoken"
+      - "traefik.http.middlewares.cors.headers.accesscontrolexposeheaders=Authorization,accesstoken,refreshtoken"
+      - "traefik.http.middlewares.cors.headers.accesscontrolallowcredentials=true"
+      # 나머지 설정들...
+      - "traefik.http.routers.chat.rule=Host(`chat.booksan.shop`)"
       - "traefik.http.routers.chat.entrypoints=websecure"
       - "traefik.http.routers.chat.tls=true"
       - "traefik.http.routers.chat.tls.certresolver=myresolver"
