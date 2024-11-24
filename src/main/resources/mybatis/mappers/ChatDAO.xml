@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC  "-//mybatis.org//DTO Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="io.booksan.booksan_chat.dao.ChatDAO">
+    <!-- 참여중인 채팅방 목록 조회 -->
+    <select id="findAllRoomById" resultType="io.booksan.booksan_chat.vo.ChatRoomVO">
+        SELECT ROOM_ID, NAME, INSERT_DAYTIME, TYPE , DEAL_ID
+        FROM CHAT_ROOM
+        WHERE email = #{email}
+        AND DISABLED = 'N'
+        ORDER BY INSERT_DAYTIME DESC
+    </select>
+
+    <select id="findAllRoom" resultType="io.booksan.booksan_chat.vo.ChatRoomVO">
+        SELECT ROOM_ID, NAME, INSERT_DAYTIME, TYPE, DEAL_ID
+        FROM CHAT_ROOM
+        where DISABLED = 'N'
+        ORDER BY INSERT_DAYTIME DESC
+    </select>
+
+    
+    <select id="findUsersByRoomId" resultType="io.booksan.booksan_chat.vo.UserChatRoomVO">
+        SELECT room_id , email , user_type
+        FROM USER_CHAT_ROOM
+        where room_id = #{roomId}
+        AND EXIT_DAYTIME IS NULL
+        ORDER BY INSERT_DAYTIME DESC
+    </select>
+
+    <!-- 채팅방 생성 -->
+    <insert id="insertChatRoom">
+        INSERT INTO CHAT_ROOM (ROOM_ID, NAME, TYPE,DEAL_ID)
+        VALUES (#{roomId}, #{name}, "private",#{dealId})
+    </insert>
+
+
+    <!-- 채팅방 제거 -->
+    <update id="deleteChatRoom">
+        UPDATE CHAT_ROOM
+        SET DISABLED = 'Y'
+        WHERE ROOM_ID = #{sessionId}
+    </update>
+
+    <!-- 사용자 채팅방 입장 -->
+    <insert id="insertUserChatRoom">
+        INSERT INTO USER_CHAT_ROOM (ROOM_ID, EMAIL,USER_TYPE)
+        VALUES (#{roomId}, #{email},#{userType})
+    </insert>
+
+    <!-- 사용자 채팅방 퇴장 -->
+    <update id="deleteUserChatRoom">
+        UPDATE USER_CHAT_ROOM
+        SET EXIT_DAYTIME = NOW()
+        WHERE ROOM_ID = #{roomId}
+        AND EMAIL = #{email}
+    </update>
+
+    <!-- 채팅 메시지 등록 -->
+    <insert id="insertChatMessage" useGeneratedKeys="true" keyProperty="messageId">
+        INSERT INTO CHAT_MESSAGE (ROOM_ID, email, CONTENT)
+        VALUES (#{roomId}, #{email}, #{content})
+    </insert>
+
+    <select id="getMessage" resultType="io.booksan.booksan_chat.vo.ChatMessageVO">
+        SELECT *
+        FROM CHAT_MESSAGE
+        WHERE room_id = #{roomId}
+    </select>
+
+    <insert id="insertReadMessage">
+        INSERT INTO CHAT_READ_MESSAGE (room_id, sender, receiver,message_id)
+        VALUES (#{roomId},#{sender},#{receiver},#{messageId})
+    </insert>
+
+    <update id="updateReadMessage">
+        UPDATE CHAT_READ_MESSAGE
+        SET read_time = NOW()
+        WHERE ROOM_ID = #{roomId}
+        AND receiver = #{receiver}
+        AND read_time IS NULL
+    </update>
+
+    <update id="updateChatAlert">
+        UPDATE USERS
+        <choose>
+            <when test="action == 'increase'">
+                SET chat_alert = chat_alert + 1
+            </when>
+            <when test="action == 'decrease'">
+                SET chat_alert = chat_alert - #{chatAlert}
+            </when>
+        </choose>
+        WHERE email = #{email}
+    </update>
+
+    <select id="getChatAlertRooms" resultType="io.booksan.booksan_chat.vo.ChatRoomVO">
+        SELECT DISTINCT cr.ROOM_ID, cr.NAME, cr.INSERT_DAYTIME, cr.TYPE, cr.DEAL_ID
+        FROM CHAT_ROOM cr
+        JOIN CHAT_READ_MESSAGE rm ON cr.ROOM_ID = rm.ROOM_ID
+        WHERE rm.receiver = #{email}
+        AND rm.read_time IS NULL
+        AND cr.DISABLED = 'N'
+        ORDER BY cr.INSERT_DAYTIME
+    </select>
+
+</mapper>
