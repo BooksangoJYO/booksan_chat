@@ -16,7 +16,7 @@ public class TokenChecker {
 
     private final RestTemplate restTemplate = new RestTemplate();
 
-    @Value("${booksan.user}")
+    @Value("${booksan.users}")
     private String userUrl;
 
     public Map<String, Object> tokenCheck(String accessToken) {
